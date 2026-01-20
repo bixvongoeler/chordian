@@ -1,11 +1,12 @@
----
-title: "EMID Final Project Report: The Chordian"
-author: "William Bix von Goeler"
-date: "December 18, 2024"
-subtitle: |
-    MUS141: Electronic Musical Instrument Design \
-    Professor Paul Lehrman
----
+<div align="center">
+
+# The Chordian
+
+**A Wireless MIDI Instrument Inspired by the Accordion**
+
+*William Bix von Goeler* · MUS141: Electronic Musical Instrument Design
+
+</div>
 
 ![The completed revised Chordian prototype with accordion straps attached.](assets/images/Chordian_Straps_Transparent.png)
 
@@ -82,8 +83,6 @@ The circuitry follows a straightforward design with the primary complexity being
 The ESP32 handles the digital inputs including 12 mechanical switches and 2 rotary encoders, as well as the VL53L0X TOF sensor over the shared I2C bus. The ESP32 also performs all signal processing for the bellows articulation before transmitting the complete data packet wirelessly. A 4-wire ribbon cable connects the two halves, carrying I2C data lines (SDA/SCL) plus power and ground. This was a compromise from our original full-wireless design, but keeps the wiring minimal and internal to the instrument.
 
 ![Onboard wiring diagram showing pull-down resistor configuration.](assets/diagrams/chordian_onboard_wiring_diagram.jpeg)
-
-\pagebreak
 
 ## Embedded Hardware, Wireless Communication, and Firmware Processing
 
