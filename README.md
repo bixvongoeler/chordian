@@ -1,14 +1,15 @@
 <div align="center">
-
-# The Chordian
-
-**A Wireless MIDI Instrument Inspired by the Accordion**
-
-*William Bix von Goeler* · MUS141: Electronic Musical Instrument Design
-
+  <h3>The Chordian:</h3>
+  <i>A Wireless MIDI Instrument Inspired by the Accordion</i>
+  <br>
 </div>
+<br>
 
 ![The completed revised Chordian prototype with accordion straps attached.](assets/images/Chordian_Straps_Transparent.png)
+
+<br>
+
+> <i>Course: MUS141 Electronic Musical Instrument Design<br>Report Author: Bix von Goeler<br>Project Team: Jude Vamenta, Leia Hannes, Luca Lodewick, Bix von Goeler</i>
 
 ## Overview
 
