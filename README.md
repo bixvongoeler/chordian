@@ -13,77 +13,11 @@
 
 ## Overview
 
-The Chordian is an electronic MIDI instrument designed around the classical bellows-based accordion. While drawing from the general design of acoustic accordions, the Chordian adopts a number of distinct qualities and novel features:
+The Chordian is a wireless MIDI instrument inspired by classical accordions, redesigned in a compact form factor with 8 piano-style keys and 12 mechanical buttons for chord triggering. 
 
-- We target a much smaller lightweight form factor with 8 piano style keys and 12 mechanical keyboard style buttons.
-- Traditional accordion bellows are emulated in software by differentiating the velocity of a TOF sensor placed between the two halves, along with an expandable mechanical assembly and springs for better play feel.
-- The traditional piano style key bed is augmented with two changes allowing further creative expression: soft potentiometers tracking fingertip position up and down keys, and force sensitive resistors placed underneath semi-flexible metal sheets in place of keys.
-- Left hand buttons are designed to trigger preset chords, allowing the user to easily create rich compositions.
+The system uses dual ESP32 microcontrollers communicating via ESP-NOW, with an Arduino Mega handling analog reads from soft potentiometers and force-sensitive resistors on each key. The onboard ESP32 processes TOF-based bellows data through an adaptive filtering pipeline and transmits to a desktop receiver running a Max patch for MIDI conversion. 
 
-After completing the first iteration of the Chordian, we identified several shortcomings that hampered playability: the tangle of wires connecting the instrument to external Arduinos, the imprecise IR-based bellows sensing, and the lack of physical resistance during bellows movement. For this revision, we focused on addressing these issues through wireless communication, a Time of Flight distance sensor, and improved physical construction. The instrument now operates as a self-contained battery-powered device, communicating wirelessly to a desktop receiver that handles MIDI conversion and audio synthesis.
-
-## Planning and Design
-
-![Exploded CAD render showing all revised Chordian components.](assets/images/housing_3d_render.jpeg)
-
-In the evaluation of our initial prototype, we identified the wiring as the largest problem. Long cables ran from the instrument to external Arduinos on a desk, creating a precarious situation where the player had to constantly concern themselves with wire positioning and connection status. We noted at the time that implementing wireless connectivity would completely eliminate these issues, though it would require placing the microcontrollers inside the instrument body.
-
-We also wanted to revisit the bellows articulation system. The initial design used a SHARP IR analog sensor that required extensive filtering and had multi-centimeter accuracy at best. During that development, we had originally intended to use a Time of Flight sensor but encountered technical difficulties that forced the IR fallback. For this revision, we committed to making the TOF sensor work properly.
-
-We retained the following parts from the initial prototype:
-
-| Part                      | Quantity |
-| ------------------------- | -------- |
-| Arduino Mega 2560 Rev 3   | 1        |
-| Linear Soft Potentiometer | 8        |
-| Accordion Straps          | 1        |
-| Leather Handle            | 1        |
-
-We purchased the following additional parts for the revised design:
-
-| Part                         | Quantity |
-| ---------------------------- | -------- |
-| ESP32-DevKitC-V4             | 2        |
-| Force Sensitive Resistor     | 8        |
-| VL53L0X TOF Sensor           | 1        |
-| Mechanical Keyboard Switches | 12       |
-| Rotary Encoders              | 2        |
-| 9V Battery                   | 1        |
-| Springs                      | 2        |
-
-### Design Pivot: ESP32 ADC Limitation
-
-Our original plan called for placing an ESP32 on each half of the instrument, enabling full wireless communication between the halves and eliminating all wired connections. However, during development we discovered that enabling WiFi on the ESP32 disables 8 of its 16 analog-to-digital converter pins. Since we needed 16 analog inputs for our soft pots and FSRs, this left us without enough ADC capacity.
-
-Rather than wait for new parts to ship, we adapted by keeping one Arduino Mega 2560 from the initial prototype to handle all analog sensor reads. The Mega communicates with the onboard ESP32 over I2C via a ribbon cable between the two instrument halves. The ESP32 then transmits data wirelessly to a second ESP32 receiver connected to the computer. This hybrid approach preserved most of our wireless goals while working within the hardware constraints we discovered. We discuss alternatives for achieving full wireless in the latter Future Improvements section.
-
-## Construction
-
-![The revised Chordian prototype](assets/images/Chordian_transparent.png)
-
-The revised prototype represents a complete physical redesign from the original wooden construction. The new housing uses laser-cut acrylic panels supported by an internal aluminum frame, resulting in a cleaner aesthetic and more rigid structure.
-
-![Internal frame, springs, and scissor mechanism connecting both halves.](assets/images/IMG_7979.jpeg)
-
-The two halves connect through a scissor mechanism that allows for smooth extension and retraction along a set track. In our initial prototype evaluation, we noted that the connection method between the halves could benefit from tuning to make pulling smoother. For this revision, we added springs between the halves to provide resistance during push and pull motions. The springs create a more tactile, instrument-like feel and help smooth direction changes while playing, addressing the disconnected feeling we experienced with the original unresisted sliding motion.
-
-The key bed half houses the Arduino Mega and 8 metal keys. Each key has a soft potentiometer on top for finger position tracking and a force sensitive resistor underneath for pressure detection. The aluminum frame provides stable mounting for the keys and sensors. The button half contains the ESP32, TOF sensor, 12 mechanical keyboard switches arranged for chord triggering and octave selection, and 2 rotary encoders for scale navigation. We chose mechanical keyboard switches over simple digital buttons for their tactile feedback and retro aesthetic. Power comes from an onboard 9V battery, making the instrument fully self-contained during performance.
-
-## Circuitry
-
-The circuitry follows a straightforward design with the primary complexity being the multi-device communication chain. The diagram above shows the high-level data flow from physical sensors through to audio output. The Arduino Mega reads all 16 analog sensors: 8 soft potentiometers for finger position and 8 force sensitive resistors for key pressure. Each analog sensor uses a 10k ohm pull-down resistor to filter signal noise and provide stable readings. Without these resistors, the sensors would be difficult to work with due to floating voltage issues.
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=1.10\textwidth,height=0.9\textheight,keepaspectratio]{assets/diagrams/full_system.png}
-\caption{Full system block diagram showing data flow from sensors to audio output.}
-\end{figure}
-
-![Internal view showing sensor wiring and connections.](assets/images/key_wiring.jpeg)
-
-The ESP32 handles the digital inputs including 12 mechanical switches and 2 rotary encoders, as well as the VL53L0X TOF sensor over the shared I2C bus. The ESP32 also performs all signal processing for the bellows articulation before transmitting the complete data packet wirelessly. A 4-wire ribbon cable connects the two halves, carrying I2C data lines (SDA/SCL) plus power and ground. This was a compromise from our original full-wireless design, but keeps the wiring minimal and internal to the instrument.
-
-![Onboard wiring diagram showing pull-down resistor configuration.](assets/diagrams/chordian_onboard_wiring_diagram.jpeg)
+A spring-loaded scissor mechanism provides tactile feedback during bellows movement, with distance readings mapped to expression control using curves tuned for musical dynamics. The instrument is self-contained with battery power and laser-cut acrylic housing.
 
 ## Embedded Hardware, Wireless Communication, and Firmware Processing
 
@@ -176,6 +110,69 @@ float mapSpeedToMidi(float speed) {
 ```
 
 This mapping approach matches comfortable bellow movement speed with human perception of dynamics much better than a linear scale.
+
+## Planning and Design
+
+![Exploded CAD render showing all revised Chordian components.](assets/images/housing_3d_render.jpeg)
+
+In the evaluation of our initial prototype, we identified the wiring as the largest problem. Long cables ran from the instrument to external Arduinos on a desk, creating a precarious situation where the player had to constantly concern themselves with wire positioning and connection status. We noted at the time that implementing wireless connectivity would completely eliminate these issues, though it would require placing the microcontrollers inside the instrument body.
+
+We also wanted to revisit the bellows articulation system. The initial design used a SHARP IR analog sensor that required extensive filtering and had multi-centimeter accuracy at best. During that development, we had originally intended to use a Time of Flight sensor but encountered technical difficulties that forced the IR fallback. For this revision, we committed to making the TOF sensor work properly.
+
+We retained the following parts from the initial prototype:
+
+| Part                      | Quantity |
+| ------------------------- | -------- |
+| Arduino Mega 2560 Rev 3   | 1        |
+| Linear Soft Potentiometer | 8        |
+| Accordion Straps          | 1        |
+| Leather Handle            | 1        |
+
+We purchased the following additional parts for the revised design:
+
+| Part                         | Quantity |
+| ---------------------------- | -------- |
+| ESP32-DevKitC-V4             | 2        |
+| Force Sensitive Resistor     | 8        |
+| VL53L0X TOF Sensor           | 1        |
+| Mechanical Keyboard Switches | 12       |
+| Rotary Encoders              | 2        |
+| 9V Battery                   | 1        |
+| Springs                      | 2        |
+
+### Design Pivot: ESP32 ADC Limitation
+
+Our original plan called for placing an ESP32 on each half of the instrument, enabling full wireless communication between the halves and eliminating all wired connections. However, during development we discovered that enabling WiFi on the ESP32 disables 8 of its 16 analog-to-digital converter pins. Since we needed 16 analog inputs for our soft pots and FSRs, this left us without enough ADC capacity.
+
+Rather than wait for new parts to ship, we adapted by keeping one Arduino Mega 2560 from the initial prototype to handle all analog sensor reads. The Mega communicates with the onboard ESP32 over I2C via a ribbon cable between the two instrument halves. The ESP32 then transmits data wirelessly to a second ESP32 receiver connected to the computer. This hybrid approach preserved most of our wireless goals while working within the hardware constraints we discovered. We discuss alternatives for achieving full wireless in the latter Future Improvements section.
+
+## Construction
+
+![The revised Chordian prototype](assets/images/Chordian_transparent.png)
+
+The revised prototype represents a complete physical redesign from the original wooden construction. The new housing uses laser-cut acrylic panels supported by an internal aluminum frame, resulting in a cleaner aesthetic and more rigid structure.
+
+![Internal frame, springs, and scissor mechanism connecting both halves.](assets/images/IMG_7979.jpeg)
+
+The two halves connect through a scissor mechanism that allows for smooth extension and retraction along a set track. In our initial prototype evaluation, we noted that the connection method between the halves could benefit from tuning to make pulling smoother. For this revision, we added springs between the halves to provide resistance during push and pull motions. The springs create a more tactile, instrument-like feel and help smooth direction changes while playing, addressing the disconnected feeling we experienced with the original unresisted sliding motion.
+
+The key bed half houses the Arduino Mega and 8 metal keys. Each key has a soft potentiometer on top for finger position tracking and a force sensitive resistor underneath for pressure detection. The aluminum frame provides stable mounting for the keys and sensors. The button half contains the ESP32, TOF sensor, 12 mechanical keyboard switches arranged for chord triggering and octave selection, and 2 rotary encoders for scale navigation. We chose mechanical keyboard switches over simple digital buttons for their tactile feedback and retro aesthetic. Power comes from an onboard 9V battery, making the instrument fully self-contained during performance.
+
+## Circuitry
+
+The circuitry follows a straightforward design with the primary complexity being the multi-device communication chain. The diagram above shows the high-level data flow from physical sensors through to audio output. The Arduino Mega reads all 16 analog sensors: 8 soft potentiometers for finger position and 8 force sensitive resistors for key pressure. Each analog sensor uses a 10k ohm pull-down resistor to filter signal noise and provide stable readings. Without these resistors, the sensors would be difficult to work with due to floating voltage issues.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=1.10\textwidth,height=0.9\textheight,keepaspectratio]{assets/diagrams/full_system.png}
+\caption{Full system block diagram showing data flow from sensors to audio output.}
+\end{figure}
+
+![Internal view showing sensor wiring and connections.](assets/images/key_wiring.jpeg)
+
+The ESP32 handles the digital inputs including 12 mechanical switches and 2 rotary encoders, as well as the VL53L0X TOF sensor over the shared I2C bus. The ESP32 also performs all signal processing for the bellows articulation before transmitting the complete data packet wirelessly. A 4-wire ribbon cable connects the two halves, carrying I2C data lines (SDA/SCL) plus power and ground. This was a compromise from our original full-wireless design, but keeps the wiring minimal and internal to the instrument.
+
+![Onboard wiring diagram showing pull-down resistor configuration.](assets/diagrams/chordian_onboard_wiring_diagram.jpeg)
 
 ## Max Processing
 
